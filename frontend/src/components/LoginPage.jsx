@@ -58,18 +58,18 @@ export const LoginPage = ({ onLoginSuccess, compact = false }) => {
 
   return (
     <div className={`${compact ? 'w-full' : 'min-h-screen bg-background flex items-center justify-center px-4 py-10'}`}>
-      <div className={`w-full ${compact ? 'max-w-none' : 'max-w-md'} rounded-2xl border border-slate-200 bg-white/90 p-8 shadow-[0_20px_45px_rgba(15,23,42,0.12)] backdrop-blur-sm`}>
+      <div className={`w-full ${compact ? 'max-w-none' : 'max-w-md'} rounded-2xl border border-white/10 bg-surface/80 p-8 shadow-[0_20px_45px_rgba(0,0,0,0.35)] backdrop-blur-sm`}>
         <div className="flex items-center gap-3 text-primary">
           <div className="rounded-full bg-primary/10 p-3">
             <ShieldCheck size={24} />
           </div>
           <div>
-            <p className="text-sm uppercase tracking-[0.3em] text-slate-500">Secure Access</p>
-            <h1 className="text-2xl font-semibold text-slate-900">SmartFactory Login</h1>
+            <p className="text-sm uppercase tracking-[0.3em] text-gray-400">Secure Access</p>
+            <h1 className="text-2xl font-semibold text-white">SmartFactory Login</h1>
           </div>
         </div>
 
-        <p className="mt-4 text-sm leading-6 text-slate-700">
+        <p className="mt-4 text-sm leading-6 text-gray-300">
           Sign in to access the manufacturing dashboard and protected operations.
         </p>
 
@@ -81,17 +81,17 @@ export const LoginPage = ({ onLoginSuccess, compact = false }) => {
           )}
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="email">
+            <label className="mb-2 block text-sm font-medium text-gray-200" htmlFor="email">
               Email
             </label>
-            <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <Mail size={18} className="text-slate-500" />
+            <div className="flex items-center rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+              <Mail size={18} className="text-gray-400" />
               <input
                 id="email"
                 type="email"
                 value={form.email}
                 onChange={(event) => setForm({ ...form, email: event.target.value })}
-                className="ml-2 w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                className="ml-2 w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-500"
                 placeholder="name@company.com"
                 autoComplete="email"
               />
@@ -100,23 +100,23 @@ export const LoginPage = ({ onLoginSuccess, compact = false }) => {
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-slate-700" htmlFor="password">
+            <label className="mb-2 block text-sm font-medium text-gray-200" htmlFor="password">
               Password
             </label>
-            <div className="flex items-center rounded-lg border border-slate-200 bg-slate-50 px-3 py-2">
-              <Lock size={18} className="text-slate-500" />
+            <div className="flex items-center rounded-lg border border-white/10 bg-black/20 px-3 py-2">
+              <Lock size={18} className="text-gray-400" />
               <input
                 id="password"
                 type={showPassword ? 'text' : 'password'}
                 value={form.password}
                 onChange={(event) => setForm({ ...form, password: event.target.value })}
-                className="ml-2 w-full bg-transparent text-sm text-slate-900 outline-none placeholder:text-slate-400"
+                className="ml-2 w-full bg-transparent text-sm text-white outline-none placeholder:text-gray-500"
                 placeholder="Enter password"
                 autoComplete="current-password"
               />
               <button
                 type="button"
-                className="ml-2 text-slate-500 transition-colors hover:text-slate-900"
+                className="ml-2 text-gray-400 transition-colors hover:text-white"
                 onClick={() => setShowPassword((value) => !value)}
               >
                 {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
@@ -125,13 +125,13 @@ export const LoginPage = ({ onLoginSuccess, compact = false }) => {
             {errors.password && <p className="mt-1 text-sm text-danger">{errors.password}</p>}
           </div>
 
-          <div className="flex items-center justify-between text-sm text-slate-600">
+          <div className="flex items-center justify-between text-sm text-gray-400">
             <label className="flex items-center gap-2">
               <input
                 type="checkbox"
                 checked={rememberMe}
                 onChange={() => setRememberMe((value) => !value)}
-                className="rounded border-slate-300 bg-white"
+                className="rounded border-white/10 bg-black/20"
               />
               Remember Me
             </label>
@@ -154,8 +154,8 @@ export const LoginPage = ({ onLoginSuccess, compact = false }) => {
           </button>
         </form>
 
-        <div className="mt-6 rounded-lg border border-slate-200 bg-slate-50 p-3 text-sm text-slate-600">
-          <p className="font-medium text-slate-900">Demo Credentials</p>
+        <div className="mt-6 rounded-lg border border-white/10 bg-black/20 p-3 text-sm text-gray-300">
+          <p className="font-medium text-white">Demo Credentials</p>
           <p className="mt-1">admin@smartfactory.com / Admin@123</p>
           <p>manager@smartfactory.com / Manager@123</p>
           <p>engineer@smartfactory.com / Engineer@123</p>
