@@ -65,5 +65,3 @@ This system operates as a **Hybrid Intelligence** platform, combining the "Strat
   - `/src/views`: Main dashboard views.
   - `/src/index.css`: Global styles and theme variables.
 
----
-*Built with ❤️ by dahdio.*

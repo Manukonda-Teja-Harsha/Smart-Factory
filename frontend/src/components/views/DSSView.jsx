@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { WhatIfControls } from '../WhatIfControls';
+import { ThemeContext } from '../DashboardLayout';
 import { Brain, TrendingUp } from 'lucide-react';
 
 export const DSSView = ({ forecast }) => {
+    const isDarkMode = useContext(ThemeContext);
     // Default fallback if loading or null
     const fData = forecast || {
         reason: "Analyzing current operating parameters...",
@@ -19,8 +21,8 @@ export const DSSView = ({ forecast }) => {
                     <Brain size={32} />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold text-white">Decision Support System</h2>
-                    <p className="text-gray-400">Predictive analytics and scenario planning</p>
+                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Decision Support System</h2>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-slate-600'}>Predictive analytics and scenario planning</p>
                 </div>
             </div>
 
@@ -29,12 +31,12 @@ export const DSSView = ({ forecast }) => {
                 <div className="md:col-span-2 space-y-6">
                     <WhatIfControls machineId="M-001" />
 
-                    <div className="bg-surface border border-white/5 rounded-xl p-6">
+                    <div className={`rounded-xl p-6 ${isDarkMode ? 'bg-surface border border-white/5' : 'bg-white border border-slate-200 shadow-sm'}`}>
                         <div className="flex items-center gap-2 mb-4">
                             <TrendingUp className="text-accent" />
-                            <h3 className="font-medium text-white">Efficiency Forecast</h3>
+                            <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Efficiency Forecast</h3>
                         </div>
-                        <p className="text-gray-400 text-sm">
+                        <p className={isDarkMode ? 'text-gray-400 text-sm' : 'text-slate-600 text-sm'}>
                             Based on current operating parameters, overall plant efficiency is projected to degrade by <span className="text-white font-bold">{fData.degradation}%</span> over the next {fData.timeframe} due to {fData.reason.toLowerCase()}.
                         </p>
                         <div className="mt-4 h-2 bg-white/5 rounded-full overflow-hidden">

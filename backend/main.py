@@ -1,17 +1,23 @@
-from fastapi import FastAPI, HTTPException
+import os
+import time
+import jwt
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Optional
 import pandas as pd
 import numpy as np
-from datetime import datetime
-from datetime import timedelta
+from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 
-from .models import MachineData, Diagnosis, SimulationRequest, SimulationResult
+from .models import MachineData, Diagnosis, SimulationRequest, SimulationResult, UserCreateRequest, LoginRequest, AuthResponse, ProfileUpdateRequest
 from .simulator import simulator
 from .dss_engine import dss_engine
 from .es_engine import es_engine
 from .database import db
+
+SECRET_KEY = os.getenv("SMARTFACTORY_SECRET_KEY", "dev-secret-key")
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
 
 app = FastAPI(title="Smart Manufacturing Hybrid System")
 
@@ -43,6 +49,39 @@ class MaintenanceLogRequest(BaseModel):
 class SearchQuery(BaseModel):
     query: str
 
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if 'sub' in to_encode and to_encode['sub'] is not None:
+        to_encode['sub'] = str(to_encode['sub'])
+    if expires_delta:
+        expire = datetime.now(timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(timezone.utc) + timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+
+def get_current_user(request: Request):
+    auth_header = request.headers.get("authorization")
+    if not auth_header or not auth_header.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Not authenticated")
+    token = auth_header.split(" ", 1)[1]
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.InvalidTokenError:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user_id = payload.get("sub")
+    if not user_id:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    user = db.get_user_by_id(int(user_id))
+    if not user or user.get("status") != "active":
+        raise HTTPException(status_code=401, detail="User is not active")
+    return user
+
+
 @app.get("/")
 def read_root():
     return {"status": "System Online", "modules": ["Simulator", "DSS", "ES", "LocalDB"]}
@@ -61,6 +100,93 @@ def get_all_rules():
     except Exception as e:
         print(f"Rules Error: {e}")
         return []
+
+@app.post("/api/auth/login", response_model=AuthResponse)
+def login(payload: LoginRequest):
+    user = db.get_user_by_email(payload.email)
+    if not user or not db.verify_password(payload.password, user['password_hash']):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    if user.get('status') != 'active':
+        raise HTTPException(status_code=403, detail="User account is inactive")
+    expires_delta = timedelta(days=30) if payload.remember_me else timedelta(hours=12)
+    token = create_access_token({"sub": user['id'], "email": user['email'], "role": user['role']}, expires_delta)
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "user": {
+            "id": user['id'],
+            "full_name": user['full_name'],
+            "email": user['email'],
+            "role": user['role'],
+            "status": user['status'],
+        }
+    }
+
+
+@app.get("/api/auth/me")
+def get_me(request: Request):
+    user = get_current_user(request)
+    return user
+
+
+@app.get("/api/auth/profile")
+def get_profile(request: Request):
+    user = get_current_user(request)
+    return {
+        "id": user['id'],
+        "full_name": user['full_name'],
+        "email": user['email'],
+        "role": user['role'],
+        "status": user['status'],
+        "phone": user.get('phone'),
+        "profile_picture": user.get('profile_picture'),
+    }
+
+
+@app.put("/api/auth/profile")
+def update_profile(request: Request, payload: ProfileUpdateRequest):
+    user = get_current_user(request)
+    user_id = user['id']
+
+    updates = []
+    values = []
+    if payload.full_name is not None:
+        updates.append("full_name = ?")
+        values.append(payload.full_name)
+    if payload.phone is not None:
+        updates.append("phone = ?")
+        values.append(payload.phone)
+    if payload.profile_picture is not None:
+        updates.append("profile_picture = ?")
+        values.append(payload.profile_picture)
+    if payload.password is not None and payload.password.strip():
+        updates.append("password_hash = ?")
+        values.append(db.hash_password(payload.password))
+
+    if updates:
+        values.append(user_id)
+        conn = db.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(f"UPDATE users SET {', '.join(updates)} WHERE id = ?", values)
+        conn.commit()
+        conn.close()
+
+    refreshed_user = db.get_user_by_id(user_id)
+    return {
+        "id": refreshed_user['id'],
+        "full_name": refreshed_user['full_name'],
+        "email": refreshed_user['email'],
+        "role": refreshed_user['role'],
+        "status": refreshed_user['status'],
+        "phone": refreshed_user.get('phone'),
+        "profile_picture": refreshed_user.get('profile_picture'),
+    }
+
+
+@app.post("/api/auth/logout")
+def logout():
+    return {"status": "logged_out"}
+
 
 @app.get("/api/dashboard/overview")
 def get_overview():

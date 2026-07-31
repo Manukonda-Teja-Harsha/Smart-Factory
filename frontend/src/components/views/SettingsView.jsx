@@ -1,8 +1,10 @@
-import React, { useState } from 'react';
-import { Settings, Save, AlertTriangle, CheckCircle } from 'lucide-react';
+import React, { useState, useContext } from 'react';
+import { Settings, Save, AlertTriangle, CheckCircle, UserCircle2, Phone, Mail } from 'lucide-react';
+import { ThemeContext } from '../DashboardLayout';
 import { Modal } from '../common/Modal';
 
-export const SettingsView = () => {
+export const SettingsView = ({ authUser }) => {
+    const isDarkMode = useContext(ThemeContext);
     const [modal, setModal] = useState({ type: null, isOpen: false });
 
     const handleReset = () => {
@@ -83,11 +85,33 @@ export const SettingsView = () => {
 
             <div className="flex items-center gap-4 border-b border-white/10 pb-6">
                 <div className="p-3 bg-white/10 rounded-full">
-                    <Settings size={32} className="text-white" />
+                    <Settings size={32} className={isDarkMode ? 'text-white' : 'text-slate-900'} />
                 </div>
                 <div>
-                    <h2 className="text-2xl font-bold text-white">System Settings</h2>
-                    <p className="text-gray-400">Configure simulation parameters and thresholds</p>
+                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>System Settings</h2>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-slate-600'}>Configure simulation parameters and thresholds</p>
+                </div>
+            </div>
+
+            <div className={`rounded-xl border p-5 ${isDarkMode ? 'border-white/10 bg-surface' : 'border-slate-200 bg-white shadow-sm'}`}>
+                <div className="flex items-center gap-3">
+                    <div className={`rounded-full p-2 ${isDarkMode ? 'bg-primary/10 text-primary' : 'bg-primary/10 text-primary'}`}>
+                        <UserCircle2 size={22} />
+                    </div>
+                    <div>
+                        <p className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{authUser?.full_name || 'Signed in user'}</p>
+                        <p className={`text-sm ${isDarkMode ? 'text-gray-400' : 'text-slate-600'}`}>{authUser?.email || 'No email available'}</p>
+                    </div>
+                </div>
+                <div className="mt-4 grid gap-3 md:grid-cols-2">
+                    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${isDarkMode ? 'border-white/10 bg-black/20 text-gray-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                        <Mail size={16} className="text-primary" />
+                        <span>{authUser?.email || '—'}</span>
+                    </div>
+                    <div className={`flex items-center gap-2 rounded-lg border px-3 py-2 text-sm ${isDarkMode ? 'border-white/10 bg-black/20 text-gray-300' : 'border-slate-200 bg-slate-50 text-slate-600'}`}>
+                        <Phone size={16} className="text-primary" />
+                        <span>{authUser?.phone || 'No phone added yet'}</span>
+                    </div>
                 </div>
             </div>
 

@@ -1,9 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { AlertFeed } from '../AlertFeed';
+import { ThemeContext } from '../DashboardLayout';
 import { ShieldCheck, Database, X, FileText, Wrench } from 'lucide-react';
 import api from '../../api';
 
 export const ESView = ({ alerts }) => {
+    const isDarkMode = useContext(ThemeContext);
     // State for Search
     const [searchQuery, setSearchQuery] = useState('');
     const [searchResults, setSearchResults] = useState([]);
@@ -127,7 +129,7 @@ export const ESView = ({ alerts }) => {
 
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 flex-1 min-h-0">
                 <div className="lg:col-span-2 h-full flex flex-col">
-                    <div className="bg-surface border border-white/5 rounded-xl p-6 flex-1 overflow-auto">
+                    <div className={`rounded-xl p-6 flex-1 overflow-auto ${isDarkMode ? 'bg-surface border border-white/5' : 'bg-white border border-slate-200 shadow-sm'}`}>
                         <AlertFeed alerts={alerts} />
                     </div>
                 </div>

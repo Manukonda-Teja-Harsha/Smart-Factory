@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import { TrendChart } from '../TrendChart';
+import { ThemeContext } from '../DashboardLayout';
 import { AlertFeed } from '../AlertFeed';
 import { WhatIfControls } from '../WhatIfControls';
 import { Activity, Zap, AlertCircle, BarChart3, FileText, CheckCircle, Loader2, Download } from 'lucide-react';
@@ -8,17 +9,17 @@ import autoTable from 'jspdf-autotable';
 import { Modal } from '../common/Modal';
 import { MetricDetailModal } from '../MetricDetailModal';
 
-const StatCard = ({ title, value, subtext, icon: Icon, trend, trendValue, onClick, isClickable }) => (
+const StatCard = ({ title, value, subtext, icon: Icon, trend, trendValue, onClick, isClickable, isDarkMode }) => (
     <div
         onClick={onClick}
-        className={`bg-surface border border-white/5 rounded-xl p-6 relative overflow-hidden group hover:border-white/10 transition-colors ${isClickable ? 'cursor-pointer hover:bg-white/5' : ''}`}
+        className={`rounded-xl p-6 relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-surface border border-white/5 hover:border-white/10 hover:bg-white/5' : 'bg-white border border-slate-200 shadow-sm hover:border-slate-300 hover:bg-slate-50'} ${isClickable ? 'cursor-pointer' : ''}`}
     >
         <div className="flex justify-between items-start mb-4">
             <div>
-                <h3 className="text-gray-400 text-sm font-medium mb-1">{title}</h3>
-                <div className="text-2xl font-bold text-white tracking-tight">{value}</div>
+                <h3 className={`text-sm font-medium mb-1 ${isDarkMode ? 'text-gray-400' : 'text-slate-500'}`}>{title}</h3>
+                <div className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{value}</div>
             </div>
-            <div className="p-3 bg-white/5 rounded-lg group-hover:bg-primary/20 group-hover:text-primary transition-colors text-gray-400">
+            <div className={`p-3 rounded-lg transition-colors ${isDarkMode ? 'bg-white/5 group-hover:bg-primary/20 group-hover:text-primary text-gray-400' : 'bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary'}`}>
                 <Icon size={20} />
             </div>
         </div>
@@ -32,6 +33,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, trendValue, onClic
 );
 
 export const Overview = ({ data, stats, machineList, onOpenMachineList }) => {
+    const isDarkMode = useContext(ThemeContext);
     const [exportParams, setExportParams] = useState({ isOpen: false, status: 'idle' });
     const [selectedMetric, setSelectedMetric] = useState(null);
 
@@ -179,12 +181,12 @@ Total projected savings: 12% energy reduction without compromising production qu
 
             <div className="flex justify-between items-center">
                 <div>
-                    <h2 className="text-2xl font-bold text-white">System Overview</h2>
-                    <p className="text-gray-400">Real-time plant telemetry and diagnostics</p>
+                    <h2 className={`text-2xl font-bold ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>System Overview</h2>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-slate-600'}>Real-time plant telemetry and diagnostics</p>
                 </div>
                 <button
                     onClick={handleExport}
-                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2"
+                    className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center gap-2 shadow-sm"
                 >
                     <BarChart3 size={18} /> Export Daily Report
                 </button>
@@ -201,6 +203,7 @@ Total projected savings: 12% energy reduction without compromising production qu
                     trendValue="-0.2%"
                     isClickable={true}
                     onClick={onOpenMachineList}
+                    isDarkMode={isDarkMode}
                 />
                 <StatCard
                     title="Production Output"
@@ -211,6 +214,7 @@ Total projected savings: 12% energy reduction without compromising production qu
                     trendValue="-1.9%"
                     isClickable={true}
                     onClick={() => setSelectedMetric('production')}
+                    isDarkMode={isDarkMode}
                 />
                 <StatCard
                     title="Energy Efficiency"
@@ -221,6 +225,7 @@ Total projected savings: 12% energy reduction without compromising production qu
                     trendValue="-1.4%"
                     isClickable={true}
                     onClick={() => setSelectedMetric('energy')}
+                    isDarkMode={isDarkMode}
                 />
                 <StatCard
                     title="Active Alerts"
@@ -231,6 +236,7 @@ Total projected savings: 12% energy reduction without compromising production qu
                     trendValue="+4.6%"
                     isClickable={true}
                     onClick={() => setSelectedMetric('alerts')}
+                    isDarkMode={isDarkMode}
                 />
             </div>
 
@@ -239,13 +245,13 @@ Total projected savings: 12% energy reduction without compromising production qu
                 <div className="lg:col-span-2 space-y-6">
                     <div className="bg-surface border border-white/5 rounded-xl p-6">
                         <div className="flex items-center justify-between mb-4">
-                            <h3 className="font-medium text-white">Virtual Simulator</h3>
+                            <h3 className={`font-medium ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>Virtual Simulator</h3>
                             <span className="text-xs text-gray-500">500 machines monitored</span>
                         </div>
                         <div className="h-[200px]">
                             <TrendChart data={data.history} type="temperature" height="100%" />
                         </div>
-                        <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
+                        <div className={`mt-4 pt-4 border-t grid grid-cols-2 gap-4 ${isDarkMode ? 'border-white/5' : 'border-slate-200'}`}>
                             <div className="h-[100px]">
                                 <TrendChart data={data.history} type="vibration" height="100%" />
                             </div>

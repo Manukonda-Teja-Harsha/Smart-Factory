@@ -5,13 +5,18 @@ import { SimulatorView } from './components/views/SimulatorView';
 import { DSSView } from './components/views/DSSView';
 import { ESView } from './components/views/ESView';
 import { SettingsView } from './components/views/SettingsView';
+import { ProfileView } from './components/views/ProfileView';
 import { MachineListModal } from './components/MachineListModal';
+import { LoginPage } from './components/LoginPage';
 import api from './api';
 
 const SPECIFIC_ALERTS = []; // Deprecated: Now using real backend alerts
 
 function App() {
   const [activeTab, setActiveTab] = useState('overview');
+  const [authUser, setAuthUser] = useState(null);
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authChecking, setAuthChecking] = useState(true);
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState({
     overview: { active_machines: 0, active_alerts: 0 },
@@ -95,6 +100,62 @@ function App() {
 
   const [error, setError] = useState(null);
 
+  const persistAuthUser = (user) => {
+    if (!user) {
+      localStorage.removeItem('authUser');
+      sessionStorage.removeItem('authUser');
+      return;
+    }
+
+    const payload = JSON.stringify(user);
+    localStorage.setItem('authUser', payload);
+    sessionStorage.setItem('authUser', payload);
+  };
+
+  const clearAuth = () => {
+    localStorage.removeItem('authToken');
+    sessionStorage.removeItem('authToken');
+    localStorage.removeItem('authUser');
+    sessionStorage.removeItem('authUser');
+    setAuthUser(null);
+    setIsAuthenticated(false);
+  };
+
+  const loadProfile = async (fallbackUser = null) => {
+    try {
+      const response = await api.get('/auth/profile');
+      const profileUser = response.data || fallbackUser;
+      setAuthUser(profileUser);
+      persistAuthUser(profileUser);
+      return profileUser;
+    } catch (error) {
+      if (fallbackUser) {
+        setAuthUser(fallbackUser);
+        persistAuthUser(fallbackUser);
+      }
+      return fallbackUser;
+    }
+  };
+
+  const verifyAuth = async () => {
+    try {
+      const token = localStorage.getItem('authToken') || sessionStorage.getItem('authToken');
+      if (!token) {
+        clearAuth();
+        setAuthChecking(false);
+        return;
+      }
+
+      const storedUser = JSON.parse(localStorage.getItem('authUser') || sessionStorage.getItem('authUser') || 'null');
+      const profileUser = await loadProfile(storedUser);
+      setIsAuthenticated(Boolean(profileUser));
+    } catch (error) {
+      clearAuth();
+    } finally {
+      setAuthChecking(false);
+    }
+  };
+
   const fetchData = async () => {
     try {
       const results = await Promise.allSettled([
@@ -146,10 +207,31 @@ function App() {
   };
 
   useEffect(() => {
+    verifyAuth();
+  }, []);
+
+  useEffect(() => {
+    if (!isAuthenticated) {
+      return;
+    }
     fetchData();
     const interval = setInterval(fetchData, 5000);
     return () => clearInterval(interval);
-  }, [activeMachinesCount]);
+  }, [activeMachinesCount, isAuthenticated]);
+
+  if (authChecking) {
+    return <div className="min-h-screen bg-background flex items-center justify-center text-primary animate-pulse">Checking authentication...</div>;
+  }
+
+  if (!isAuthenticated) {
+    return <LoginPage onLoginSuccess={async (user) => {
+      setAuthUser(user);
+      persistAuthUser(user);
+      setIsAuthenticated(true);
+      setAuthChecking(false);
+      await loadProfile(user);
+    }} />;
+  }
 
   if (loading && !data.history.length) {
     return <div className="min-h-screen bg-background flex items-center justify-center text-primary animate-pulse">Initializing System...</div>;
@@ -175,13 +257,24 @@ function App() {
         />;
       case 'dss': return <DSSView forecast={data.forecast} />;
       case 'es': return <ESView alerts={data.alerts} />;
-      case 'settings': return <SettingsView />;
+      case 'settings': return <SettingsView authUser={authUser} />;
+      case 'profile': return <ProfileView authUser={authUser} onProfileUpdated={(updatedUser) => {
+        setAuthUser(updatedUser);
+        persistAuthUser(updatedUser);
+      }} />;
       default: return <Overview data={data} />;
     }
   };
 
   return (
-    <DashboardLayout activeTab={activeTab} setActiveTab={setActiveTab}>
+    <DashboardLayout
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      authUser={authUser}
+      onLogout={() => {
+        clearAuth();
+      }}
+    >
       {error && (
         <div className="bg-danger/10 border-b border-danger/20 text-danger px-6 py-2 text-sm flex items-center justify-center animate-pulse">
           {error}

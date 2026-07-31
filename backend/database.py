@@ -1,3 +1,6 @@
+import hashlib
+import hmac
+import os
 import sqlite3
 import json
 from datetime import datetime, timedelta
@@ -57,14 +60,40 @@ class Database:
             )
         ''')
 
+        # 4. Users for Authentication
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS users (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                full_name TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL DEFAULT 'viewer',
+                status TEXT NOT NULL DEFAULT 'active',
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        self._ensure_user_profile_columns(cursor)
+
         # Seed Fault Rules if empty
         cursor.execute('SELECT count(*) FROM fault_rules')
         if cursor.fetchone()[0] == 0:
             self._seed_rules(cursor)
 
+        cursor.execute('SELECT count(*) FROM users')
+        if cursor.fetchone()[0] == 0:
+            self._seed_users(cursor)
+
         conn.commit()
         conn.close()
         print(f"--- SQLite Database '{DB_NAME}' Initialized ---")
+
+    def _ensure_user_profile_columns(self, cursor):
+        cursor.execute("PRAGMA table_info(users)")
+        columns = {row[1] for row in cursor.fetchall()}
+        if 'phone' not in columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN phone TEXT")
+        if 'profile_picture' not in columns:
+            cursor.execute("ALTER TABLE users ADD COLUMN profile_picture TEXT")
 
     def _seed_rules(self, cursor):
         rules = [
@@ -74,6 +103,56 @@ class Database:
             (json.dumps(['vibration', 'misalignment']), 'Shaft Misalignment', 'Realign Motor Shaft', 0.88, 'Medium'),
         ]
         cursor.executemany('INSERT INTO fault_rules (symptom_keywords, diagnosis, action, confidence, severity) VALUES (?, ?, ?, ?, ?)', rules)
+
+    def _seed_users(self, cursor):
+        users = [
+            ('Super Admin', 'admin@smartfactory.com', self.hash_password('Admin@123'), 'super_admin', 'active'),
+            ('Plant Manager', 'manager@smartfactory.com', self.hash_password('Manager@123'), 'plant_manager', 'active'),
+            ('Maintenance Engineer', 'engineer@smartfactory.com', self.hash_password('Engineer@123'), 'maintenance_engineer', 'active'),
+        ]
+        cursor.executemany(
+            'INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+            users
+        )
+
+    def hash_password(self, password: str) -> str:
+        salt = hashlib.sha256(os.urandom(16)).hexdigest().encode('utf-8')
+        pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt, 100000)
+        return salt.decode('utf-8') + ':' + pwd_hash.hex()
+
+    def verify_password(self, password: str, password_hash: str) -> bool:
+        try:
+            salt, stored_hash = password_hash.split(':', 1)
+        except ValueError:
+            return False
+        pwd_hash = hashlib.pbkdf2_hmac('sha256', password.encode('utf-8'), salt.encode('utf-8'), 100000)
+        return hmac.compare_digest(pwd_hash.hex(), stored_hash)
+
+    def create_user(self, full_name: str, email: str, password: str, role: str = 'viewer', status: str = 'active'):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO users (full_name, email, password_hash, role, status) VALUES (?, ?, ?, ?, ?)',
+            (full_name, email.lower(), self.hash_password(password), role, status)
+        )
+        conn.commit()
+        conn.close()
+
+    def get_user_by_email(self, email: str):
+        conn = self.get_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        row = cursor.execute('SELECT * FROM users WHERE email = ?', (email.lower(),)).fetchone()
+        conn.close()
+        return dict(row) if row else None
+
+    def get_user_by_id(self, user_id: int):
+        conn = self.get_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        row = cursor.execute('SELECT * FROM users WHERE id = ?', (user_id,)).fetchone()
+        conn.close()
+        return dict(row) if row else None
 
     def insert_readings(self, readings: List[dict]):
         """Bulk insert machine readings"""
