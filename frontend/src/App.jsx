@@ -173,7 +173,6 @@ function App() {
       const overviewData = getVal(results[0], { active_machines: activeMachinesCount, active_alerts: 0, total_machines: 500 });
       const trendsData = getVal(results[1], { avg_temp: 0, avg_vib: 0 });
       const alertsData = getVal(results[2], []);
-      const machinesData = getVal(results[3], []); // Not used for history but good to have
       const forecastData = getVal(results[4], { current_efficiency: 94.0 });
       const historyData = getVal(results[5], []);
 

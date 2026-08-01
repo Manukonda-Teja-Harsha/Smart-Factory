@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { TrendChart } from '../TrendChart';
-import { ThemeContext } from '../DashboardLayout';
+import { ThemeContext } from '../../context/ThemeContext';
 import { AlertFeed } from '../AlertFeed';
 import { WhatIfControls } from '../WhatIfControls';
 import { Activity, Zap, AlertCircle, BarChart3, FileText, CheckCircle, Loader2, Download } from 'lucide-react';
@@ -9,7 +9,7 @@ import autoTable from 'jspdf-autotable';
 import { Modal } from '../common/Modal';
 import { MetricDetailModal } from '../MetricDetailModal';
 
-const StatCard = ({ title, value, subtext, icon: Icon, trend, trendValue, onClick, isClickable, isDarkMode }) => (
+const StatCard = ({ title, value, subtext, icon: IconComponent, trend, trendValue, onClick, isClickable, isDarkMode }) => (
     <div
         onClick={onClick}
         className={`rounded-xl p-6 relative overflow-hidden group transition-colors ${isDarkMode ? 'bg-surface border border-white/5 hover:border-white/10 hover:bg-white/5' : 'bg-white border border-slate-200 shadow-sm hover:border-slate-300 hover:bg-slate-50'} ${isClickable ? 'cursor-pointer' : ''}`}
@@ -20,7 +20,7 @@ const StatCard = ({ title, value, subtext, icon: Icon, trend, trendValue, onClic
                 <div className={`text-2xl font-bold tracking-tight ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>{value}</div>
             </div>
             <div className={`p-3 rounded-lg transition-colors ${isDarkMode ? 'bg-white/5 group-hover:bg-primary/20 group-hover:text-primary text-gray-400' : 'bg-slate-100 text-slate-600 group-hover:bg-primary/10 group-hover:text-primary'}`}>
-                <Icon size={20} />
+                <IconComponent size={20} />
             </div>
         </div>
         <div className="flex items-center gap-2">
@@ -38,15 +38,13 @@ export const Overview = ({ data, stats, machineList, onOpenMachineList }) => {
     const [selectedMetric, setSelectedMetric] = useState(null);
 
     // Fallback if stats aren't passed yet (defensive)
-    const { production, energy, active } = stats || {
+    const { production, energy } = stats || {
         production: { value: '94.2', trend: '2.4' },
         energy: { value: '87.8', trend: '-1.2' },
         active: { value: 500, trend: '0.0' }
     };
 
-    // Derived Alert Trend (Simulated)
     const alertCount = data.overview.active_alerts;
-    const alertTrend = alertCount > 5 ? `+${(alertCount / 5).toFixed(1)}%` : '-2.1%';
 
     const handleExport = () => {
         setExportParams({ isOpen: true, status: 'generating' });

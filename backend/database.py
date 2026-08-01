@@ -3,16 +3,19 @@ import hmac
 import os
 import sqlite3
 import json
+from pathlib import Path
 from datetime import datetime, timedelta
 from typing import List, Optional
 
-DB_NAME = "smartfactory.db"
+BASE_DIR = Path(__file__).resolve().parent.parent
+DB_NAME = str(BASE_DIR / "smartfactory.db")
 
 class Database:
     def __init__(self):
         self.conn = None
 
     def get_connection(self):
+        os.makedirs(str(Path(DB_NAME).parent), exist_ok=True)
         return sqlite3.connect(DB_NAME, check_same_thread=False)
 
     def init_db(self):
@@ -137,6 +140,40 @@ class Database:
         )
         conn.commit()
         conn.close()
+
+    def log_maintenance(self, machine_id: str, diagnosis_id: Optional[int], technician_action: str, notes: str, resolved: bool = True):
+        conn = self.get_connection()
+        cursor = conn.cursor()
+        cursor.execute(
+            'INSERT INTO maintenance_logs (machine_id, diagnosis_id, technician_action, notes, resolved) VALUES (?, ?, ?, ?, ?)',
+            (machine_id, diagnosis_id, technician_action, notes, int(resolved))
+        )
+        conn.commit()
+        log_id = cursor.lastrowid
+        conn.close()
+        return log_id
+
+    def get_maintenance_logs(self, limit: int = 50):
+        conn = self.get_connection()
+        conn.row_factory = sqlite3.Row
+        cursor = conn.cursor()
+        rows = cursor.execute(
+            '''
+            SELECT ml.*, fr.diagnosis AS diagnosis
+            FROM maintenance_logs ml
+            LEFT JOIN fault_rules fr ON fr.id = ml.diagnosis_id
+            ORDER BY ml.timestamp DESC
+            LIMIT ?
+            ''',
+            (limit,)
+        ).fetchall()
+        conn.close()
+        results = []
+        for row in rows:
+            item = dict(row)
+            item['fault_rules'] = {'diagnosis': item.get('diagnosis') or 'System Event'}
+            results.append(item)
+        return results
 
     def get_user_by_email(self, email: str):
         conn = self.get_connection()

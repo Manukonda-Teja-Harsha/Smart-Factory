@@ -41,7 +41,7 @@ This system operates as a **Hybrid Intelligence** platform, combining the "Strat
 
 1.  **Clone the repository:**
     ```bash
-    git clone https://github.com/dahdio/SmartFactory_DSES.git
+    git clone https://github.com/dahdio/SmartFactory.git
     cd SmartFactory_DSES
     ```
 

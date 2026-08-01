@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { AlertFeed } from '../AlertFeed';
-import { ThemeContext } from '../DashboardLayout';
+import { ThemeContext } from '../../context/ThemeContext';
 import { ShieldCheck, Database, X, FileText, Wrench } from 'lucide-react';
 import api from '../../api';
 
@@ -46,7 +46,7 @@ export const ESView = ({ alerts }) => {
     };
 
     // Apply Fix Logic
-    const handleApplyFix = async (rule, index) => {
+    const handleApplyFix = async (rule) => {
         try {
             await api.post('/maintenance/log', {
                 machine_id: 'M-050', // Demo ID
@@ -171,8 +171,8 @@ export const ESView = ({ alerts }) => {
                                     { id: 1, diagnosis: "Bearing Seizure Warning", confidence: 0.95, action: "Replace Bearing Assembly" },
                                     { id: 2, diagnosis: "Motor Phase Imbalance", confidence: 0.88, action: "Check Electrical Phases" },
                                     { id: 3, diagnosis: "Emergency Stop Circuit", confidence: 0.99, action: "Reset Safety Circuit" }
-                                ]).map((item, i) => (
-                                    <div key={i} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors group">
+                                ]).map((item) => (
+                                    <div key={item.id} className="flex items-center justify-between p-2 hover:bg-white/5 rounded-lg cursor-pointer transition-colors group">
                                         <div className="flex items-center gap-3">
                                             <div className="w-8 h-8 rounded bg-blue-500/10 text-blue-500 flex items-center justify-center text-xs font-bold">
                                                 ID-{item.id}
@@ -183,7 +183,7 @@ export const ESView = ({ alerts }) => {
                                             </div>
                                         </div>
                                         <button
-                                            onClick={() => handleApplyFix(item, i)}
+                                            onClick={() => handleApplyFix(item)}
                                             className="text-xs bg-white/5 hover:bg-primary hover:text-white px-2 py-1 rounded transition-colors"
                                         >
                                             Apply Fix

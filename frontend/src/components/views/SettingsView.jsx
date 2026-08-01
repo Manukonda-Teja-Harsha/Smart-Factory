@@ -1,6 +1,6 @@
 import React, { useState, useContext } from 'react';
 import { Settings, Save, AlertTriangle, CheckCircle, UserCircle2, Phone, Mail } from 'lucide-react';
-import { ThemeContext } from '../DashboardLayout';
+import { ThemeContext } from '../../context/ThemeContext';
 import { Modal } from '../common/Modal';
 
 export const SettingsView = ({ authUser }) => {

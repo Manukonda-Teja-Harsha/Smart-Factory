@@ -9,7 +9,7 @@ export const TrendChart = ({ data, type, height = '100%', className = '', period
         signals: { color: '#8b5cf6', label: 'Signals / Hour' }
     };
 
-    const { color, label } = config[type] || config.temperature;
+    const { color } = config[type] || config.temperature;
 
     const formatXAxis = (tick) => {
         try {

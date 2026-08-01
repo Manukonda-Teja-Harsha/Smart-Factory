@@ -7,7 +7,7 @@ export const MetricDetailModal = ({ isOpen, onClose, metricType, stats, data, ma
 
     const renderContent = () => {
         switch (metricType) {
-            case 'production':
+            case 'production': {
                 const offMachines = machineList?.filter(m => m.status === 'OFF') || [];
                 return (
                     <div className="space-y-6 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
@@ -37,8 +37,9 @@ export const MetricDetailModal = ({ isOpen, onClose, metricType, stats, data, ma
                         </div>
                     </div>
                 );
+            }
 
-            case 'energy':
+            case 'energy': {
                 const criticalMachines = machineList?.filter(m => m.condition === 'Critical') || [];
                 const warningMachines = machineList?.filter(m => m.condition === 'Below Normal') || [];
                 return (
@@ -82,8 +83,9 @@ export const MetricDetailModal = ({ isOpen, onClose, metricType, stats, data, ma
                         </div>
                     </div>
                 );
+            }
 
-            case 'alerts':
+            case 'alerts': {
                 const criticalAlerts = data.alerts.filter(a => a.confidence > 0.9);
                 return (
                     <div className="space-y-6 overflow-y-auto max-h-[60vh] pr-2 custom-scrollbar">
@@ -117,6 +119,7 @@ export const MetricDetailModal = ({ isOpen, onClose, metricType, stats, data, ma
                         </div>
                     </div>
                 );
+            }
 
             default: return null;
         }

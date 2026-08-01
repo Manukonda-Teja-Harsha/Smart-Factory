@@ -1,7 +1,6 @@
-import React, { createContext, useContext } from 'react';
+import React from 'react';
 import { LayoutDashboard, Activity, Brain, Settings, Bell, User, Sun, Moon, LogOut, UserCircle2 } from 'lucide-react';
-
-export const ThemeContext = createContext(false);
+import { ThemeContext } from '../context/ThemeContext';
 
 const SidebarItem = ({ icon: Icon, label, active, onClick }) => (
     <button

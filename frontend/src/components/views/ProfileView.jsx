@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useContext } from 'react';
 import { UserCircle2, Save, Camera, Lock, Phone, Mail, ShieldCheck } from 'lucide-react';
-import { ThemeContext } from '../DashboardLayout';
+import { ThemeContext } from '../../context/ThemeContext';
 import api from '../../api';
 
 export const ProfileView = ({ authUser, onProfileUpdated }) => {

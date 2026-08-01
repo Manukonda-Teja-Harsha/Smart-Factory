@@ -1,23 +1,25 @@
 import os
-import time
 import jwt
+from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List, Dict, Optional
 import pandas as pd
-import numpy as np
 from datetime import datetime, timedelta, timezone
 from pydantic import BaseModel
 
-from .models import MachineData, Diagnosis, SimulationRequest, SimulationResult, UserCreateRequest, LoginRequest, AuthResponse, ProfileUpdateRequest
+from .models import MachineData, Diagnosis, SimulationRequest, SimulationResult, LoginRequest, AuthResponse, ProfileUpdateRequest
 from .simulator import simulator
 from .dss_engine import dss_engine
 from .es_engine import es_engine
 from .database import db
 
-SECRET_KEY = os.getenv("SMARTFACTORY_SECRET_KEY", "dev-secret-key")
+load_dotenv()
+
+SECRET_KEY = os.getenv("SMARTFACTORY_SECRET_KEY") or "smart-factory-dev-secret-key-change-me-in-production-2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 12
+ALLOWED_ORIGINS = [origin.strip() for origin in os.getenv("SMARTFACTORY_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173").split(",") if origin.strip()]
 
 app = FastAPI(title="Smart Manufacturing Hybrid System")
 
@@ -25,14 +27,12 @@ app = FastAPI(title="Smart Manufacturing Hybrid System")
 def startup_event():
     print("--- BACKEND STARTUP: Initializing Local DB ---")
     db.init_db()
-    # Check if we need to seed history
     simulator.ensure_history()
     print("--- BACKEND SERVER RUNNING ON PORT 8000 (LOCAL SQLITE) ---")
 
-# CORS for Frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"], 
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -82,9 +82,27 @@ def get_current_user(request: Request):
     return user
 
 
+def require_roles(request: Request, allowed_roles: List[str]):
+    user = get_current_user(request)
+    if user.get("role") not in allowed_roles:
+        raise HTTPException(status_code=403, detail="Forbidden")
+    return user
+
+
 @app.get("/")
 def read_root():
     return {"status": "System Online", "modules": ["Simulator", "DSS", "ES", "LocalDB"]}
+
+
+@app.get("/health")
+@app.get("/api/health")
+def health_check():
+    return {
+        "status": "ok",
+        "service": "smartfactory-backend",
+        "database": "sqlite",
+        "services": ["auth", "simulator", "dss", "es"]
+    }
 
 @app.post("/api/refresh")
 def force_refresh():
@@ -258,11 +276,18 @@ def search_knowledge_base(q: str):
         print(f"Search Error: {e}")
         return []
 
+@app.get("/api/maintenance/logs")
+def get_maintenance_logs():
+    """Get maintenance logs for the technician view."""
+    return db.get_maintenance_logs()
+
+
 @app.post("/api/maintenance/log")
-def log_maintenance(log: MaintenanceLogRequest):
-    """Log technician action"""
-    # Skipping implementation for speed, but DB has table
-    return {"status": "Logged (Stub)"}
+def log_maintenance(request: Request, log: MaintenanceLogRequest):
+    """Log technician action and persist it to SQLite."""
+    require_roles(request, ["super_admin", "plant_manager", "maintenance_engineer"])
+    log_id = db.log_maintenance(log.machine_id, log.diagnosis_id, log.technician_action, log.notes, log.resolved)
+    return {"status": "Logged", "id": log_id}
 
 @app.post("/api/dss/simulate", response_model=SimulationResult)
 def run_simulation(req: SimulationRequest):

@@ -1,11 +1,9 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { TrendChart } from '../TrendChart';
-import { ThemeContext } from '../DashboardLayout';
 import { Power, Activity, Clock, BarChart2 } from 'lucide-react';
 import api from '../../api';
 
 export const SimulatorView = ({ data, onOpenMachineList }) => {
-    const isDarkMode = useContext(ThemeContext);
     // Persist state in localStorage, default to true
     const [isSimulatorOn, setIsSimulatorOn] = useState(() => {
         const saved = localStorage.getItem('isSimulatorOn');

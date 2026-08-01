@@ -1,6 +1,6 @@
 import React, { useContext } from 'react';
 import { WhatIfControls } from '../WhatIfControls';
-import { ThemeContext } from '../DashboardLayout';
+import { ThemeContext } from '../../context/ThemeContext';
 import { Brain, TrendingUp } from 'lucide-react';
 
 export const DSSView = ({ forecast }) => {
